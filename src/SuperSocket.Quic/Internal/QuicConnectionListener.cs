@@ -1,4 +1,5 @@
 using System;
+using System.Net.Quic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
@@ -18,12 +19,16 @@ namespace SuperSocket.Quic.Internal;
 internal sealed class QuicConnectionListener(
     ListenOptions listenOptions,
     IServiceProvider provider,
+    ILoggerFactory loggerFactory,
     IConnectionFactory connectionFactory,
     ILogger logger) : IConnectionListener
 {
     private IMultiplexedConnectionListener _listenSocket;
     private CancellationTokenSource _cancellationTokenSource;
     private TaskCompletionSource<bool> _stopTaskCompletionSource;
+    
+    private readonly QuicTransportOptions _transportOptions = provider.GetRequiredService<IOptions<QuicTransportOptions>>().Value;
+
     public IConnectionFactory ConnectionFactory { get; } = connectionFactory;
     public ListenOptions Options => listenOptions;
     public bool IsRunning { get; private set; }
@@ -36,18 +41,16 @@ internal sealed class QuicConnectionListener(
         {
             var listenEndpoint = options.ToEndPoint();
             var listenCollection = options.ToQuicConnectionFeatureCollection();
-            var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-            var quicTransportOptions = provider.GetRequiredService<IOptions<QuicTransportOptions>>().Value;
 
             var listenerFactory = QuicListener.CreateListenerFactory(loggerFactory, new QuicTransportOptions
             {
-                DefaultStreamErrorCode = quicTransportOptions.DefaultStreamErrorCode,
-                MaxBidirectionalStreamCount = quicTransportOptions.MaxBidirectionalStreamCount,
-                MaxReadBufferSize = quicTransportOptions.MaxReadBufferSize,
-                MaxUnidirectionalStreamCount = quicTransportOptions.MaxUnidirectionalStreamCount,
-                MaxWriteBufferSize = quicTransportOptions.MaxWriteBufferSize,
                 Backlog = options.BackLog,
-                DefaultCloseErrorCode = quicTransportOptions.DefaultCloseErrorCode,
+                DefaultStreamErrorCode = _transportOptions.DefaultStreamErrorCode,
+                MaxBidirectionalStreamCount = _transportOptions.MaxBidirectionalStreamCount,
+                MaxReadBufferSize = _transportOptions.MaxReadBufferSize,
+                MaxUnidirectionalStreamCount = _transportOptions.MaxUnidirectionalStreamCount,
+                MaxWriteBufferSize = _transportOptions.MaxWriteBufferSize,
+                DefaultCloseErrorCode = _transportOptions.DefaultCloseErrorCode,
             });
 
             var listenSocket =

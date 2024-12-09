@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Security;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
@@ -50,17 +51,29 @@ public static class QuicServerHostBuilderExtensions
 
         var collection = new FeatureCollection();
 
+        options.AuthenticationOptions.ApplicationProtocols ??= [SslApplicationProtocol.Http3];
+
         collection.Set(new TlsConnectionCallbackOptions
         {
-            ApplicationProtocols = [SslApplicationProtocol.Http3],
+            ApplicationProtocols = options.AuthenticationOptions.ApplicationProtocols!,
             OnConnection = (context, cancellationToken) => new ValueTask<SslServerAuthenticationOptions>
             (
                 new SslServerAuthenticationOptions
                 {
-                    ApplicationProtocols = [SslApplicationProtocol.Http3],
+                    EnabledSslProtocols = options.AuthenticationOptions.EnabledSslProtocols,
+                    CipherSuitesPolicy = options.AuthenticationOptions.CipherSuitesPolicy,
+                    AllowRenegotiation = options.AuthenticationOptions.AllowRenegotiation,
+                    ServerCertificateContext = options.AuthenticationOptions.ServerCertificateContext,
+                    ApplicationProtocols = options.AuthenticationOptions.ApplicationProtocols,
                     ServerCertificate = options.AuthenticationOptions.ServerCertificate,
                     RemoteCertificateValidationCallback =
-                        options.AuthenticationOptions.RemoteCertificateValidationCallback
+                        options.AuthenticationOptions.RemoteCertificateValidationCallback,
+                    ClientCertificateRequired = options.AuthenticationOptions.ClientCertificateRequired,
+                    CertificateChainPolicy = options.AuthenticationOptions.CertificateChainPolicy,
+                    EncryptionPolicy = options.AuthenticationOptions.EncryptionPolicy,
+                    CertificateRevocationCheckMode = options.AuthenticationOptions.CertificateRevocationCheckMode,
+                    ServerCertificateSelectionCallback =
+                        options.AuthenticationOptions.ServerCertificateSelectionCallback,
                 }
             )
         });

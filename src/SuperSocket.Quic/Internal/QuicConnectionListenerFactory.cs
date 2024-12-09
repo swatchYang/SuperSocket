@@ -21,6 +21,6 @@ internal sealed class QuicConnectionListenerFactory(
 
         var connectionFactory = connectionFactoryBuilder.Build(options, connectionOptions);
 
-        return new QuicConnectionListener(options, provider, connectionFactory, connectionFactoryLogger);
+        return new QuicConnectionListener(options, provider, loggerFactory, connectionFactory, connectionFactoryLogger);
     }
 }
