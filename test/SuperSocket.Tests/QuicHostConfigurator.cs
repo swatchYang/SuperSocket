@@ -71,6 +71,7 @@ namespace SuperSocket.Tests
                                 { SslApplicationProtocol.Http3 };
 
                             _currentSslProtocols = authenticationOptions.EnabledSslProtocols;
+                            Listener = listener;
                         });
                     }
                 );
