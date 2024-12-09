@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Quic;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +26,8 @@ namespace SuperSocket.Tests
 {
     public class QuicHostConfigurator : IHostConfigurator
     {
+        private SslProtocols _currentSslProtocols;
+        
         private static readonly ArrayPool<byte> _bufferPool = ArrayPool<byte>.Shared;
 
         public string WebSocketSchema => "ws";
@@ -50,20 +53,29 @@ namespace SuperSocket.Tests
                         services.Configure<ServerOptions>((options) =>
                         {
                             var listener = options.Listeners[0];
-                            listener.AuthenticationOptions = new ServerAuthenticationOptions
+
+                            var authenticationOptions = listener.AuthenticationOptions;
+
+                            if (authenticationOptions == null)
                             {
-                                CertificateOptions = new CertificateOptions
-                                {
-                                    FilePath = "supersocket.pfx",
-                                    Password = "supersocket"
-                                }
+                                authenticationOptions = listener.AuthenticationOptions = new ServerAuthenticationOptions();
+                            }
+
+                            authenticationOptions.CertificateOptions = new CertificateOptions
+                            {
+                                FilePath = "supersocket.pfx",
+                                Password = "supersocket"
                             };
-                            Listener = listener;
+
+                            authenticationOptions.ApplicationProtocols = new List<SslApplicationProtocol>
+                                { SslApplicationProtocol.Http3 };
+
+                            _currentSslProtocols = authenticationOptions.EnabledSslProtocols;
                         });
                     }
                 );
         }
-
+        
         public TextReader GetStreamReader(Stream stream, Encoding encoding)
         {
             throw new NotImplementedException();
@@ -112,6 +124,7 @@ namespace SuperSocket.Tests
                         IdleTimeout = TimeSpan.FromSeconds(10),
                         ClientAuthenticationOptions = new SslClientAuthenticationOptions
                         {
+                            TargetHost = "supersocket",
                             ApplicationProtocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http3 },
                             RemoteCertificateValidationCallback = (sender, certificate, chain, errors) =>
                             {
