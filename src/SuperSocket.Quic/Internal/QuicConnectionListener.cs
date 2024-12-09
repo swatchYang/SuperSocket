@@ -26,8 +26,9 @@ internal sealed class QuicConnectionListener(
     private IMultiplexedConnectionListener _listenSocket;
     private CancellationTokenSource _cancellationTokenSource;
     private TaskCompletionSource<bool> _stopTaskCompletionSource;
-    
-    private readonly QuicTransportOptions _transportOptions = provider.GetRequiredService<IOptions<QuicTransportOptions>>().Value;
+
+    private readonly QuicTransportOptions _transportOptions =
+        provider.GetRequiredService<IOptions<QuicTransportOptions>>().Value;
 
     public IConnectionFactory ConnectionFactory { get; } = connectionFactory;
     public ListenOptions Options => listenOptions;
@@ -79,6 +80,9 @@ internal sealed class QuicConnectionListener(
             {
                 var quicConnection =
                     await listenSocket.AcceptAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (quicConnection == null)
+                    break;
 
                 OnNewClientAccept(quicConnection);
             }
