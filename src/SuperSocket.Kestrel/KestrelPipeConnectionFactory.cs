@@ -1,4 +1,6 @@
-﻿namespace SuperSocket.Kestrel;
+﻿using SuperSocket.Kestrel.Connection;
+
+namespace SuperSocket.Kestrel;
 
 using System;
 using System.Net.Sockets;

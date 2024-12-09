@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>$(DotNetTargetFrameworks)</TargetFrameworks>
+        <LangVersion>12.0</LangVersion>
+        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+        <Description>SuperSocket library allows users to take advantage of Kestrel's high performance socket pipeline.</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="../SuperSocket.Server.Abstractions/SuperSocket.Server.Abstractions.csproj" />
+        <ProjectReference Include="..\SuperSocket.Kestrel.Connection\SuperSocket.Kestrel.Connection.csproj" />
+    </ItemGroup>
+</Project>

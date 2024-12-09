@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>SSuperSocket webSocket connection</Description>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(IncludeMobileTargetFramework) == 'true'">
+        <TargetFrameworks>$(TargetFrameworks);$(MobileTargetFrameworks)</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\SuperSocket.Connection\SuperSocket.Connection.csproj" />
+    </ItemGroup>
+</Project>

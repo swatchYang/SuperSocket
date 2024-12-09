@@ -47,6 +47,8 @@ namespace SuperSocket.Connection
 
         private bool _isDetaching = false;
 
+      
+
         protected PipeConnectionBase(PipeReader inputReader, PipeWriter outputWriter, ConnectionOptions options)
         {
             Options = options;
@@ -151,7 +153,8 @@ namespace SuperSocket.Connection
             return false;
         }
 
-        protected virtual Task StartInputPipeTask<TPackageInfo>(IObjectPipe<TPackageInfo> packagePipe, CancellationToken cancellationToken)
+        protected virtual Task StartInputPipeTask<TPackageInfo>(IObjectPipe<TPackageInfo> packagePipe,
+            CancellationToken cancellationToken)
         {
             return ReadPipeAsync(InputReader, packagePipe, cancellationToken);
         }
@@ -164,7 +167,8 @@ namespace SuperSocket.Connection
             }
         }
 
-        public override async ValueTask SendAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        public override async ValueTask SendAsync(ReadOnlyMemory<byte> buffer,
+            CancellationToken cancellationToken = default)
         {
             var sendLockAcquired = false;
 
@@ -188,7 +192,8 @@ namespace SuperSocket.Connection
             writer.Write(buffer.Span);
         }
 
-        public override async ValueTask SendAsync<TPackage>(IPackageEncoder<TPackage> packageEncoder, TPackage package, CancellationToken cancellationToken = default)
+        public override async ValueTask SendAsync<TPackage>(IPackageEncoder<TPackage> packageEncoder, TPackage package,
+            CancellationToken cancellationToken = default)
         {
             var sendLockAcquired = false;
 
@@ -206,7 +211,7 @@ namespace SuperSocket.Connection
             }
         }
 
-        public override async ValueTask SendAsync(Action<PipeWriter> write, CancellationToken cancellationToken)
+        public override async ValueTask SendAsync(Action<PipeWriter> write, CancellationToken cancellationToken = default)
         {
             var sendLockAcquired = false;
 
@@ -224,17 +229,20 @@ namespace SuperSocket.Connection
             }
         }
 
-        protected void WritePackageWithEncoder<TPackage>(IBufferWriter<byte> writer, IPackageEncoder<TPackage> packageEncoder, TPackage package)
+        protected void WritePackageWithEncoder<TPackage>(IBufferWriter<byte> writer,
+            IPackageEncoder<TPackage> packageEncoder, TPackage package)
         {
             CheckConnectionOpen();
             packageEncoder.Encode(writer, package);
         }
 
-        protected virtual void OnInputPipeRead(ReadResult result)
+        protected virtual Task OnInputPipeReadAsync(ReadResult result)
         {
+            return Task.CompletedTask;
         }
 
-        protected async Task ReadPipeAsync<TPackageInfo>(PipeReader reader, IObjectPipe<TPackageInfo> packagePipe, CancellationToken cancellationToken)
+        protected async Task ReadPipeAsync<TPackageInfo>(PipeReader reader, IObjectPipe<TPackageInfo> packagePipe,
+            CancellationToken cancellationToken)
         {
             var pipelineFilter = _pipelineFilter as IPipelineFilter<TPackageInfo>;
 
@@ -245,7 +253,7 @@ namespace SuperSocket.Connection
                 try
                 {
                     result = await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                    OnInputPipeRead(result);
+                    await OnInputPipeReadAsync(result);
                 }
                 catch (Exception e)
                 {
@@ -271,7 +279,8 @@ namespace SuperSocket.Connection
                 {
                     if (buffer.Length > 0)
                     {
-                        var needReadMore = ReaderBuffer(ref buffer, pipelineFilter, packagePipe, out consumed, out examined, out var currentPipelineFilter);
+                        var needReadMore = ReaderBuffer(ref buffer, pipelineFilter, packagePipe, out consumed,
+                            out examined, out var currentPipelineFilter);
 
                         if (currentPipelineFilter != null)
                         {
@@ -304,8 +313,13 @@ namespace SuperSocket.Connection
                 }
             }
 
-            reader.Complete();
+            OnReaderComplete(reader, _isDetaching);
             WriteEOFPackage();
+        }
+
+        protected virtual void OnReaderComplete(PipeReader reader, bool isDetaching)
+        {
+            reader.Complete();
         }
 
         protected void WriteEOFPackage()
@@ -313,7 +327,10 @@ namespace SuperSocket.Connection
             _packagePipe.WirteEOF();
         }
 
-        private bool ReaderBuffer<TPackageInfo>(ref ReadOnlySequence<byte> buffer, IPipelineFilter<TPackageInfo> pipelineFilter, IObjectPipe<TPackageInfo> packagePipe, out SequencePosition consumed, out SequencePosition examined, out IPipelineFilter<TPackageInfo> currentPipelineFilter)
+        private bool ReaderBuffer<TPackageInfo>(ref ReadOnlySequence<byte> buffer,
+            IPipelineFilter<TPackageInfo> pipelineFilter, IObjectPipe<TPackageInfo> packagePipe,
+            out SequencePosition consumed, out SequencePosition examined,
+            out IPipelineFilter<TPackageInfo> currentPipelineFilter)
         {
             consumed = buffer.Start;
             examined = buffer.End;
@@ -336,7 +353,8 @@ namespace SuperSocket.Connection
                 if (nextFilter != null)
                 {
                     // ProxyProtocolPipelineFilter always is the first filter and its next filter is the actual first filter.
-                    if (bytesConsumedTotal == 0 && pipelineFilter is IProxyProtocolPipelineFilter proxyProtocolPipelineFilter)
+                    if (bytesConsumedTotal == 0 &&
+                        pipelineFilter is IProxyProtocolPipelineFilter proxyProtocolPipelineFilter)
                     {
                         ProxyInfo = proxyProtocolPipelineFilter.ProxyInfo;
                     }

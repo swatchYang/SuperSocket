@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Security.Authentication;
 using SuperSocket.Kestrel;
 using System.Threading;
+using SuperSocket.Kestrel.Connection;
 
 /// <summary>
 /// Run selected test case by command
